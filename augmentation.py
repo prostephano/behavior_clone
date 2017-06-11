@@ -23,12 +23,12 @@ class BlackAug(AugBase):
         start = 0
         end = 0
 
-        if (False or left_or_right == 0):
+        if (left_or_right == 0):
             start = 0
-            right = int(img_w * self.length)
+            end = int(img_w * self.length)
         else:
             start = int(img_w * (1 - self.length))
-            right = img_w
+            end = img_w
 
         img = copy.copy(img)
         img[:, start:end, :] = 0
@@ -54,18 +54,21 @@ class BrightnessAug(AugBase):
         return img, angle
 
 class StretchAug(AugBase):
+    def __init__(self, stretch_ratio):
+        self.stretch_ratio = stretch_ratio
+
     def perform_aug(self, img, angle):
         org_shape = img.shape
-        img = cv2.resize(img,None,fx=1, fy=1.2, interpolation = cv2.INTER_CUBIC)
+        img = cv2.resize(img,None,fx=1, fy=self.stretch_ratio, interpolation = cv2.INTER_CUBIC)
         # Crop
-        img = img[img.shape[0] - org_shape[0]:img.shape[0], 0]
+        img = img[img.shape[0] - org_shape[0]:img.shape[0], 0:img.shape[1]]
         return img, angle
 
 AUG_COLLECTION = [BlackAug(0.6)]
 
 def behavior_perform_aug(aug_prob, img, angle):
     for aug in AUG_COLLECTION:
-        if (random.randint(0, 10) > int(aug_prob * 20)):
+        if ((random.randint(0, 10) / 10.0) < aug_prob):
             img, angle = aug.perform_aug(img, angle)
 
     return img, angle
