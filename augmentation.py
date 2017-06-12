@@ -32,7 +32,6 @@ class BlackAug(AugBase):
 
         img = copy.copy(img)
         img[:, start:end, :] = 0
-
         return img, angle
 
 class FlipAug(AugBase):
@@ -64,12 +63,12 @@ class StretchAug(AugBase):
         img = img[img.shape[0] - org_shape[0]:img.shape[0], 0:img.shape[1]]
         return img, angle
 
-AUG_COLLECTION = [BlackAug(0.6)]
+AUG_COLLECTION = [BlackAug(0.6), FlipAug()]
 
 def behavior_perform_aug(aug_prob, img, angle):
-    for aug in AUG_COLLECTION:
-        if ((random.randint(0, 10) / 10.0) < aug_prob):
-            img, angle = aug.perform_aug(img, angle)
+    img, angle = AUG_COLLECTION[0].perform_aug(img, angle)
+    if ((aug_prob * 100) >= random.randint(0, 100)):
+        img, angle = AUG_COLLECTION[1].perform_aug(img, angle)
 
     return img, angle
 

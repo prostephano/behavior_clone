@@ -13,8 +13,8 @@ from keras.layers import *
 from augmentation import *
 from keras.models import load_model
 
-BATCH_SIZE = 16
-RESIZED_SHAPE = (40, 80)
+BATCH_SIZE = 32
+RESIZED_SHAPE = (80, 160)
 
 def get_all_data(csv_loc = './driving_log.csv'):
     to_return = []
@@ -59,7 +59,7 @@ def center_generator(samples, batch_size, perform_aug):
                     images.append(image)
                     angles.append(angle)
                 else:
-                    image, angle = behavior_perform_aug(0.9, image, angle)
+                    image, angle = behavior_perform_aug(0.5, image, angle)
                     images.append(image)
                     angles.append(angle)
 
@@ -74,7 +74,8 @@ def resize_img(x):
     # Need duplicative import due to a bug in kera's
     # load_model
     import keras.backend
-    return keras.backend.tf.image.resize_images(x, size=(40, 80))
+    # Hard coding below due to keras bug
+    return keras.backend.tf.image.resize_images(x, size=(80, 160))
 
 def train_get_initializer():
     return keras.initializers.RandomNormal()
@@ -96,9 +97,6 @@ def train_network(train_set, validation_set, image_shape, batch_size):
     crop_dimension=((65,15), (0,0))
     model.add( Cropping2D(cropping=crop_dimension) )
 
-    # resize
-    resized_img_shape = (RESIZED_SHAPE[0], RESIZED_SHAPE[1], 1)
-    model.add(Lambda(resize_img, output_shape=resized_img_shape))
     #end of pre process
 
     # Conv section
@@ -143,7 +141,7 @@ def train_network(train_set, validation_set, image_shape, batch_size):
         ]
 
     # Training
-    model.fit_generator(train_set_generator, steps_per_epoch=len(train_set), \
+    model.fit_generator(train_set_generator, steps_per_epoch=int(len(train_set) * 0.3), \
             validation_data=validation_set_generator, \
             nb_val_samples=len(validation_set), nb_epoch=1000, callbacks=callbacks)
 
