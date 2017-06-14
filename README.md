@@ -47,7 +47,7 @@ Udacity suggested a CNN + NVIDIA neural network model. The detail of NVIDIA neur
 
 With my machine capacity, it was a challange to train such a complicated model, however.
 
-NVIDIA model is for a self driving car. However, my model is simply predicting a steering angle. Realizing this, I changed the model to something smaller: LeNet
+NVIDIA model is for a self driving car. In contrast, my model needs to only predict a steering angle. Realizing this, I changed the model to something smaller: LeNet
 
 ## Final Model Architecture
 
@@ -73,8 +73,8 @@ To avoid overfitting, the following techniques were used
 Augmentation was used not only to generate more training data, but also force generalization of the model
 
 The following augmentation was applied during training
-* black out: Either the left or right 60% of the image was blacked out. This forced the network to predict angle based on one side of the image. In fact, this is similar to how humans drive. If one side of the lane is invisible, a human driver would rely on the other side
-* flip: An image was randomly flipped, along with its angle
+* flip: An image was randomly flipped, along with its angle. This was suggested by Udacity
+* black out: Either the left or right 60% of the image was blacked out. This forced the network to predict angle based on one side of the image. In fact, this is similar to how humans drive. If a lane marking on one side of the road is unclear, a human driver would drive based on the other side
 
 ## Result
 The resulting model performed well on the first track. The following is a video of how the model navigates through the course. A short manual intervention was done (around 3:22) to make the car go the opposite direction
@@ -91,5 +91,5 @@ What went well:
 * Used minimum amount of data (Used only what was provided by Udacity)
 
 What didnt go well:
-* Model is not general enough
-* Model does not (yet) know how to recover. If situated perpendicular to the lane, the model goes over the lane
+* Model is not general enough. It fails to drive on the second course
+* Model does not (yet) know how to recover. It is not shown on the video, but when situated perpendicular to the lane, the model drove over the lane
