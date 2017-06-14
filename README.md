@@ -14,6 +14,7 @@ The goals / steps of this project, as specified in Udacity:
 #How to run the model
 * python drive.py model.h5
 * Run driving simulator
+    * Simulator can be obtained here: https://github.com/udacity/self-driving-car-sim
 
 #Attempt #1: What was submitted during the course
 ##Architecture of the neural network
@@ -74,12 +75,18 @@ The following augmentation was applied during training
 * flip: An image was randomly flipped, along with its angle
 
 ##Result
-The resulting model performed well on the first track. The following is a video of how the model navigates through the course
+The resulting model performed well on the first track. The following is a video of how the model navigates through the course. A short manual intervention was done (around 8:28) to make the car go the opposite direction
+
+![](attempt1_track1.mp4)
 
 Unfortunately, the model couldnt drive through the second track. It was rather willing to jump off the cliff.
 
-As it was near the submission deadline, the project was submitted in this state
+![](attempt1_track2.mp4)
 
-#Attempt #2: Improving on the model
-##
-## Failure analysis
+What went well:
+* Developed a model which can be trained within an hour on a desktop GPU
+* Used minimum amount of data (Used only what was provided by Udacity)
+
+What didnt go well:
+* Model is not general enough
+* Model does not (yet) know how to recover. If situated perpendicular to the lane, the model goes over the lane
