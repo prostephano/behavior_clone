@@ -11,13 +11,13 @@ The goals / steps of this project, as specified in Udacity:
 * Test that the model successfully drives around track one without leaving the road
 * Summarize the results with a written report
 
-#How to run the model
+# How to run the model
 * python drive.py model.h5
 * Run driving simulator
     * Simulator can be obtained here: https://github.com/udacity/self-driving-car-sim
 
-#Attempt #1: What was submitted during the course
-##Architecture of the neural network
+# Attempt #1: What was submitted during the course
+## Architecture of the neural network
 * PreProcess
     * lambda: Grayscale and normalization layer: mean of RGB, then normalize to [-0.5, 0.5]
     * Crop: Drop top 65 and bottom 15
@@ -45,43 +45,46 @@ All relu layer was used as an experimentation, but it did not deliver better res
 
 Udacity suggested a CNN + NVIDIA neural network model. The detail of NVIDIA neural network model is here: https://images.nvidia.com/content/tegra/automotive/images/2016/solutions/pdf/end-to-end-dl-using-px.pdf
 
-With my machine capacity, it was a challange to train such a complicated model
+With my machine capacity, it was a challange to train such a complicated model, however.
 
-##Final Model Architecture
+NVIDIA model is for a self driving car. However, my model is simply predicting a steering angle. Realizing this, I changed the model to something smaller: LeNet
+
+## Final Model Architecture
 
 Here is a visualization of the architecture
 
 ![network _description](network.png)
 
-##Training data
+## Training data
 Data which was provided by the course was used : driving_log_udacity.py
 
 I tried creating my own training data, but it resulted in a worse model.
 
 Apparently I am not a good example for the model to be trained on.
 
-##Training process
+## Training process
 
 To avoid overfitting, the following techniques were used
 * Dropout of 50% in the neural network layer
 * Augmentation: In fact, training was done only with augmented images
 * Early stopping with patience of 3 epochs
 
-##Augmentation done
+## Augmentation done
 Augmentation was used not only to generate more training data, but also force generalization of the model
 
 The following augmentation was applied during training
 * black out: Either the left or right 60% of the image was blacked out. This forced the network to predict angle based on one side of the image. In fact, this is similar to how humans drive. If one side of the lane is invisible, a human driver would rely on the other side
 * flip: An image was randomly flipped, along with its angle
 
-##Result
-The resulting model performed well on the first track. The following is a video of how the model navigates through the course. A short manual intervention was done (around 8:28) to make the car go the opposite direction
+## Result
+The resulting model performed well on the first track. The following is a video of how the model navigates through the course. A short manual intervention was done (around 3:22) to make the car go the opposite direction
 
 ![](attempt1_track1.mp4)
+[![Watch the video](attempt1_track1.mp4)](attempt1_track1.mp4)
 
 Unfortunately, the model couldnt drive through the second track. It was rather willing to jump off the cliff.
 
-![](attempt1_track2.mp4)
+[![Watch the video](attempt1_track2.mp4)](attempt1_track2.mp4)
 
 What went well:
 * Developed a model which can be trained within an hour on a desktop GPU
