@@ -1,118 +1,85 @@
-# Behaviorial Cloning Project
+**Behavioral Cloning Project**
 
-[![Udacity - Self-Driving Car NanoDegree](https://s3.amazonaws.com/udacity-sdc/github/shield-carnd.svg)](http://www.udacity.com/drive)
+This is my implementation of Udacity self driving car, project 3, behavioral project
 
-Overview
----
-This repository contains starting files for the Behavioral Cloning Project.
+This markdown lists how I arrived at my submission during my enrollment, and I improved since then
 
-In this project, you will use what you've learned about deep neural networks and convolutional neural networks to clone driving behavior. You will train, validate and test a model using Keras. The model will output a steering angle to an autonomous vehicle.
-
-We have provided a simulator where you can steer a car around a track for data collection. You'll use image data and steering angles to train a neural network and then use this model to drive the car autonomously around the track.
-
-We also want you to create a detailed writeup of the project. Check out the [writeup template](https://github.com/udacity/CarND-Behavioral-Cloning-P3/blob/master/writeup_template.md) for this project and use it as a starting point for creating your own writeup. The writeup can be either a markdown file or a pdf document.
-
-To meet specifications, the project will require submitting five files: 
-* model.py (script used to create and train the model)
-* drive.py (script to drive the car - feel free to modify this file)
-* model.h5 (a trained Keras model)
-* a report writeup file (either markdown or pdf)
-* video.mp4 (a video recording of your vehicle driving autonomously around the track for at least one full lap)
-
-This README file describes how to output the video in the "Details About Files In This Directory" section.
-
-Creating a Great Writeup
----
-A great writeup should include the [rubric points](https://review.udacity.com/#!/rubrics/432/view) as well as your description of how you addressed each point.  You should include a detailed description of the code used (with line-number references and code snippets where necessary), and links to other supporting documents or external references.  You should include images in your writeup to demonstrate how your code works with examples.  
-
-All that said, please be concise!  We're not looking for you to write a book here, just a brief description of how you passed each rubric point, and references to the relevant code :). 
-
-You're not required to use markdown for your writeup.  If you use another method please just submit a pdf of your writeup.
-
-The Project
----
-The goals / steps of this project are the following:
-* Use the simulator to collect data of good driving behavior 
-* Design, train and validate a model that predicts a steering angle from image data
-* Use the model to drive the vehicle autonomously around the first track in the simulator. The vehicle should remain on the road for an entire loop around the track.
+The goals / steps of this project, as specified in Udacity:
+* Use the simulator to collect data of good driving behavior
+* Build, a convolution neural network in Keras that predicts steering angles from images
+* Train and validate the model with a training and validation set
+* Test that the model successfully drives around track one without leaving the road
 * Summarize the results with a written report
 
-### Dependencies
-This lab requires:
+#How to run the model
+* python drive.py model.h5
+* Run driving simulator
 
-* [CarND Term1 Starter Kit](https://github.com/udacity/CarND-Term1-Starter-Kit)
+#Attempt #1: What was submitted during the course
+##Architecture of the neural network
+* PreProcess
+    * lambda: Grayscale and normalization layer: mean of RGB, then normalize to [-0.5, 0.5]
+    * Crop: Drop top 65 and bottom 15
+* Convolution
+    * Convolution: filter size 6, kernel size 5, stride 1, padding valid
+    * Max pool: 2x2
+    * Convolution: filter size 6, kernel size 5, stride 1, padding valid
+    * Max pool: 2x2
+    * Convolution: filter size 6, kernel size 5, stride 1, padding valid
+    * Max pool: 2x2
+* Neural network
+    * Flatten
+    * Dense: 40 relu neurons, normal random initialization with 0 mean 0.5 std dev. L2 regularization
+    * Dropout applied here
+    * Dense: 30 linear neurons, normal random initialization with 0 mean 0.5 std dev. L2 regularization
+    * Dense: 10 linear neurons, normal random initialization with 0 mean 0.5 std dev. L2 regularization
+    * Dense: 1 linear neurons, normal random initialization with 0 mean 0.5 std dev. L2 regularization
+* The output of the last dense layer is the steering angle predicted by the network
+* Loss function: predicted steering angle vs output
+* optimizer: Adam optimizer was used
 
-The lab enviroment can be created with CarND Term1 Starter Kit. Click [here](https://github.com/udacity/CarND-Term1-Starter-Kit/blob/master/README.md) for the details.
+The last layer is linear, as we want an angle most of the time. Relu is either 0 or linear.
 
-The following resources can be found in this github repository:
-* drive.py
-* video.py
-* writeup_template.md
+All relu layer was used as an experimentation, but it did not deliver better results than linear.
 
-The simulator can be downloaded from the classroom. In the classroom, we have also provided sample data that you can optionally use to help train your model.
+Udacity suggested a CNN + NVIDIA neural network model. The detail of NVIDIA neural network model is here: https://images.nvidia.com/content/tegra/automotive/images/2016/solutions/pdf/end-to-end-dl-using-px.pdf
 
-## Details About Files In This Directory
+With my machine capacity, it was a challange to train such a complicated model
 
-### `drive.py`
+##Final Model Architecture
 
-Usage of `drive.py` requires you have saved the trained model as an h5 file, i.e. `model.h5`. See the [Keras documentation](https://keras.io/getting-started/faq/#how-can-i-save-a-keras-model) for how to create this file using the following command:
-```sh
-model.save(filepath)
-```
+Here is a visualization of the architecture
 
-Once the model has been saved, it can be used with drive.py using this command:
+![network _description](network.png)
 
-```sh
-python drive.py model.h5
-```
+##Training data
+Data which was provided by the course was used : driving_log_udacity.py
 
-The above command will load the trained model and use the model to make predictions on individual images in real-time and send the predicted angle back to the server via a websocket connection.
+I tried creating my own training data, but it resulted in a worse model.
 
-Note: There is known local system's setting issue with replacing "," with "." when using drive.py. When this happens it can make predicted steering values clipped to max/min values. If this occurs, a known fix for this is to add "export LANG=en_US.utf8" to the bashrc file.
+Apparently I am not a good example for the model to be trained on.
 
-#### Saving a video of the autonomous agent
+##Training process
 
-```sh
-python drive.py model.h5 run1
-```
+To avoid overfitting, the following techniques were used
+* Dropout of 50% in the neural network layer
+* Augmentation: In fact, training was done only with augmented images
+* Early stopping with patience of 3 epochs
 
-The fourth argument `run1` is the directory to save the images seen by the agent to. If the directory already exists it'll be overwritten.
+##Augmentation done
+Augmentation was used not only to generate more training data, but also force generalization of the model
 
-```sh
-ls run1
+The following augmentation was applied during training
+* black out: Either the left or right 60% of the image was blacked out. This forced the network to predict angle based on one side of the image. In fact, this is similar to how humans drive. If one side of the lane is invisible, a human driver would rely on the other side
+* flip: An image was randomly flipped, along with its angle
 
-[2017-01-09 16:10:23 EST]  12KiB 2017_01_09_21_10_23_424.jpg
-[2017-01-09 16:10:23 EST]  12KiB 2017_01_09_21_10_23_451.jpg
-[2017-01-09 16:10:23 EST]  12KiB 2017_01_09_21_10_23_477.jpg
-[2017-01-09 16:10:23 EST]  12KiB 2017_01_09_21_10_23_528.jpg
-[2017-01-09 16:10:23 EST]  12KiB 2017_01_09_21_10_23_573.jpg
-[2017-01-09 16:10:23 EST]  12KiB 2017_01_09_21_10_23_618.jpg
-[2017-01-09 16:10:23 EST]  12KiB 2017_01_09_21_10_23_697.jpg
-[2017-01-09 16:10:23 EST]  12KiB 2017_01_09_21_10_23_723.jpg
-[2017-01-09 16:10:23 EST]  12KiB 2017_01_09_21_10_23_749.jpg
-[2017-01-09 16:10:23 EST]  12KiB 2017_01_09_21_10_23_817.jpg
-...
-```
+##Result
+The resulting model performed well on the first track. The following is a video of how the model navigates through the course
 
-The image file name is a timestamp when the image image was seen. This information is used by `video.py` to create a chronological video of the agent driving.
+Unfortunately, the model couldnt drive through the second track. It was rather willing to jump off the cliff.
 
-### `video.py`
+As it was near the submission deadline, the project was submitted in this state
 
-```sh
-python video.py run1
-```
-
-Create a video based on images found in the `run1` directory. The name of the video will be name of the directory following by `'.mp4'`, so, in this case the video will be `run1.mp4`.
-
-Optionally one can specify the FPS (frames per second) of the video:
-
-```sh
-python video.py run1 --fps 48
-```
-
-The video will run at 48 FPS. The default FPS is 60.
-
-#### Why create a video
-
-1. It's been noted the simulator might perform differently based on the hardware. So if your model drives succesfully on your machine it might not on another machine (your reviewer). Saving a video is a solid backup in case this happens.
-2. You could slightly alter the code in `drive.py` and/or `video.py` to create a video of what your model sees after the image is processed (may be helpful for debugging).
+#Attempt #2: Improving on the model
+##
+## Failure analysis
