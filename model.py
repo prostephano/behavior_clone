@@ -15,6 +15,7 @@ from keras.models import load_model
 
 BATCH_SIZE = 32
 RESIZED_SHAPE = (80, 160)
+AUG_PROBABILITY = 0.5
 
 def get_all_data(csv_loc = './driving_log.csv'):
     to_return = []
@@ -59,7 +60,7 @@ def center_generator(samples, batch_size, perform_aug):
                     images.append(image)
                     angles.append(angle)
                 else:
-                    image, angle = behavior_perform_aug(0.5, image, angle)
+                    image, angle = behavior_perform_aug(AUG_PROBABILITY, image, angle)
                     images.append(image)
                     angles.append(angle)
 
@@ -69,13 +70,6 @@ def center_generator(samples, batch_size, perform_aug):
 
 def mean_normalize(x):
     return K.mean(x/127.5 - 1., axis=3, keepdims=True)
-
-def resize_img(x):
-    # Need duplicative import due to a bug in kera's
-    # load_model
-    import keras.backend
-    # Hard coding below due to keras bug
-    return keras.backend.tf.image.resize_images(x, size=(80, 160))
 
 def train_get_initializer():
     return keras.initializers.RandomNormal()
