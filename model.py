@@ -1,21 +1,24 @@
+# External
 import csv
 import psutil
 import sys
 import numpy
 import sklearn
 import cv2
-
 import matplotlib
 import matplotlib.pyplot as plt
-from sklearn.model_selection import train_test_split
 import keras.models
+
+from sklearn.model_selection import train_test_split
 from keras.layers import *
-from augmentation import *
 from keras.models import load_model
+
+# Internal
+from augmentation import *
+from balance import balance_data
 
 BATCH_SIZE = 32
 RESIZED_SHAPE = (80, 160)
-AUG_PROBABILITY = 0.5
 
 def get_all_data(csv_loc = './driving_log.csv'):
     to_return = []
@@ -48,7 +51,6 @@ def center_generator(samples, batch_size, perform_aug):
 
             # center img loc, left img loc, right img loc, steer angle, throttle, break, speed
             for batch_sample in batch_samples:
-                # Read as gray scale to begin with
                 image = pretrain_image_process(batch_sample[img_index])
                 angle = float(batch_sample[3])
 
@@ -60,7 +62,7 @@ def center_generator(samples, batch_size, perform_aug):
                     images.append(image)
                     angles.append(angle)
                 else:
-                    image, angle = behavior_perform_aug(AUG_PROBABILITY, image, angle)
+                    image, angle = behavior_perform_aug(image, angle)
                     images.append(image)
                     angles.append(angle)
 
@@ -107,10 +109,14 @@ def train_network(train_set, validation_set, image_shape, batch_size):
     # End of flatten
 
     # Start of Dense section
-    model.add(keras.layers.core.Dense(40, kernel_initializer=train_get_initializer(), \
+    model.add(keras.layers.core.Dense(160, kernel_initializer=train_get_initializer(), \
             kernel_regularizer=train_get_regularizer()))
     model.add(keras.layers.Activation('relu'))
     model.add(Dropout(0.5))
+
+    model.add(keras.layers.core.Dense(80, kernel_initializer=train_get_initializer(), \
+            kernel_regularizer=train_get_regularizer()))
+    model.add(keras.layers.Activation('relu'))
 
     model.add(keras.layers.core.Dense(30, kernel_initializer=train_get_initializer(), \
             kernel_regularizer=train_get_regularizer()))
@@ -135,7 +141,7 @@ def train_network(train_set, validation_set, image_shape, batch_size):
         ]
 
     # Training
-    model.fit_generator(train_set_generator, steps_per_epoch=int(len(train_set) * 0.3), \
+    model.fit_generator(train_set_generator, steps_per_epoch=int(len(train_set)), \
             validation_data=validation_set_generator, \
             nb_val_samples=len(validation_set), nb_epoch=1000, callbacks=callbacks)
 
@@ -144,9 +150,11 @@ def train_network(train_set, validation_set, image_shape, batch_size):
 
 def main():
     samples = get_all_data()
+    samples = balance_data(samples)
+    numpy.random.shuffle(samples)
 
     train_samples, validation_samples = train_test_split(samples, test_size=0.05)
-    validation_samples = copy.deepcopy(train_samples)
+    validation_samples = copy.copy(train_samples)
 
     image_shape = numpy.shape(pretrain_image_process(train_samples[0][0]))
     train_network(train_samples, validation_samples, image_shape, BATCH_SIZE)

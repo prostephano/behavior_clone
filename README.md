@@ -79,7 +79,6 @@ The following augmentation was applied during training
 ## Result
 The resulting model performed well on the first track. The following is a video of how the model navigates through the course. A short manual intervention was done (around 3:22) to make the car go the opposite direction
 
-![](attempt1_track1.mp4)
 [![Watch the video](attempt1_track1.mp4)](attempt1_track1.mp4)
 
 Unfortunately, the model couldnt drive through the second track. It was rather willing to jump off the cliff.
@@ -93,3 +92,38 @@ What went well:
 What didnt go well:
 * Model is not general enough. It fails to drive on the second course
 * Model does not (yet) know how to recover. It is not shown on the video, but when situated perpendicular to the lane, the model drove over the lane
+
+# Attempt #2: Improving and Generalization
+## Failure Analysis #1: Lack of data on the second track
+The initial analysis of the failure on the second track was the lack of training data. As such, driving data from the second data was added to the training data. Surprisingly, this did not improve the model at all. Rather, it worsened the performance on the first track as well, driving the car out of lane
+
+[![Watch the video](attempt2_blindly_more_data.mp4)](attempt2_blindly_more_data.mp4)
+
+## Failure Analysis #2: Unbalanced data
+It was noticed at this point that the data is unbalanced. The histogram below shows the distribution of angles of training data
+
+![histogram_before_balance](histogram_before_balance.png)
+
+The histogram shows the below:
+
+* The model might have a right turn bias. Most of data is > 0. Indeed, the model did not go left enough when it ran out of the lane in failure analysis #1. Realizing this, the model was ran through the same section, but in a different direction. That went better!
+[![Watch the video](attempt2_blindly_more_data_opposite.mp4)](attempt2_blindly_more_data_opposite.mp4)
+* Most of data is near 0. This explains why the model is not taking sharp turns when it should
+
+Based on the above analysis, the training data was balanced based on angles. Between dropping data and adding more data of minorities, the latter was chosen. The amount of data between minority and majority was wide enough that dropping to fit the minority would have resulted in lack of training data. The logic for balancing is in balance.py. As the model has randomized augmentation logic, training data in minority sets were added without any augmentation.
+
+Result: That went better! And the model is able to drive through the first course. Still fails on the second track, however
+
+## Failure Analysis #3: Shadow
+
+Running the model through the second track, the model drove to a wrong side, whenever shadow is present. This looked related to BlackoutAug, which was forcing the car to drive with half of the screen black.
+
+Realizing this, it became clear that the augmentation strategy has to be restablished. The second track contained some unique features which could confuse the model.
+
+* Shadow: Due to varying brightness, the line could appear darker or brigher. BrightnessAug was to counter this, making the image darker or brighter
+* Dotted Line: The second track has dotted line, which is the model assumed not OK to cross. DottedlineAug was added, drawing a dotted white line to random locations of the screen. The assumption was that, this would help the model to learn to ignore the white dotted line
+
+The resulting model was doing better, but it was consistently failing to drive around road signs.
+
+[![Watch the video](attempt3_track2.mp4)](attempt3_track2.mp4)
+
