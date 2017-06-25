@@ -28,7 +28,7 @@ The goals / steps of this project, as specified in Udacity:
     * Max pool: 2x2
     * Convolution: filter size 6, kernel size 5, stride 1, padding valid
     * Max pool: 2x2
-* Neural network
+* Dense layer
     * Flatten
     * Dense: 40 relu neurons, normal random initialization with 0 mean 0.5 std dev. L2 regularization
     * Dropout applied here
@@ -79,11 +79,11 @@ The following augmentation was applied during training
 ## Result
 The resulting model performed well on the first track. The following is a video of how the model navigates through the course. A short manual intervention was done (around 3:22) to make the car go the opposite direction
 
-[![Watch the video](attempt1_track1.mp4)](attempt1_track1.mp4)
+[![Watch the video](video/attempt1_track1.mp4)](video/attempt1_track1.mp4)
 
 Unfortunately, the model couldnt drive through the second track. It was rather willing to jump off the cliff.
 
-[![Watch the video](attempt1_track2.mp4)](attempt1_track2.mp4)
+[![Watch the video](video/attempt1_track2.mp4)](video/attempt1_track2.mp4)
 
 What went well:
 * Developed a model which can be trained within an hour on a desktop GPU
@@ -97,7 +97,7 @@ What didnt go well:
 ## Failure Analysis #1: Lack of data on the second track
 The initial analysis of the failure on the second track was the lack of training data. As such, driving data from the second data was added to the training data. Surprisingly, this did not improve the model at all. Rather, it worsened the performance on the first track as well, driving the car out of lane
 
-[![Watch the video](attempt2_blindly_more_data.mp4)](attempt2_blindly_more_data.mp4)
+[![Watch the video](video/attempt2_blindly_more_data.mp4)](video/attempt2_blindly_more_data.mp4)
 
 ## Failure Analysis #2: Unbalanced data
 It was noticed at this point that the data is unbalanced. The histogram below shows the distribution of angles of training data
@@ -107,7 +107,7 @@ It was noticed at this point that the data is unbalanced. The histogram below sh
 The histogram shows the below:
 
 * The model might have a right turn bias. Most of data is > 0. Indeed, the model did not go left enough when it ran out of the lane in failure analysis #1. Realizing this, the model was ran through the same section, but in a different direction. That went better!
-[![Watch the video](attempt2_blindly_more_data_opposite.mp4)](attempt2_blindly_more_data_opposite.mp4)
+[![Watch the video](video/attempt2_blindly_more_data_opposite.mp4)](video/attempt2_blindly_more_data_opposite.mp4)
 * Most of data is near 0. This explains why the model is not taking sharp turns when it should
 
 Based on the above analysis, the training data was balanced based on angles. Between dropping data and adding more data of minorities, the latter was chosen. The amount of data between minority and majority was wide enough that dropping to fit the minority would have resulted in lack of training data. The logic for balancing is in balance.py. As the model has randomized augmentation logic, training data in minority sets were added without any augmentation.
@@ -123,7 +123,55 @@ Realizing this, it became clear that the augmentation strategy has to be restabl
 * Shadow: Due to varying brightness, the line could appear darker or brigher. BrightnessAug was to counter this, making the image darker or brighter
 * Dotted Line: The second track has dotted line, which is the model assumed not OK to cross. DottedlineAug was added, drawing a dotted white line to random locations of the screen. The assumption was that, this would help the model to learn to ignore the white dotted line
 
-The resulting model was doing better, but it was consistently failing to drive around road signs.
+Also, another dense layer was as there was a gap in the training loss and the validation loss.
 
-[![Watch the video](attempt3_track2.mp4)](attempt3_track2.mp4)
+### Optimization: Training time
+At this point, the model was getting trained with 77000s of images per epoch, each epoch taking nearly 4 hours.
 
+This is when I convered all linear activations to the relu activations, except the last layer. Relu shows the same behavior as a linear activation above threshold, but outputs 0 below the threshold. This property can help with the training time by making the network sparse, reducing the amount of computations.
+
+The conversion reduced the training time to 3 hours.
+
+### Resulting model
+Here is how the resulting model drove. It was doing better, until it ran into a sharp curve.
+
+[![Watch the video](video/attempt3_track2.mp4)](video/attempt3_track2.mp4)
+
+## Failure Analysis #4: Sharp turn
+
+The resulting model was doing better, but it was consistently failing to make a sharp turn. It appeared that the model is not sure what to do if it is too close to the lane marking. This is more apparent when the model predicts a left turn close to the curve.
+
+![sharp](attempt4_track2_stuck.png)
+
+To train the model how to get through a sharp turn, StretchAug was modified to not only enlarge the image, but also to reduce the image. The reduced image makes a regular curve appear more sharp
+
+![prestretch](augmentation_eg/regular_curve_prestretch.jpg)
+![poststretch](augmentation_eg/regular_curve_poststretch.png)
+
+## Final
+Training with the enhanced StretchAug, the model finally became capable of driving both tracks!
+
+The below recaps the model and augmentations
+
+### List of augmentations
+
+Note: BrightnessAug should have been the last augmentation, but the training of final_model.h5 was done without this bug fixed
+
+The table below lists augmentations done, and an example of applying each individually
+
+| Augmentation Name | Probability | Behavior | EG |
+| ------------- |:-------------:| -----:| -----:|
+| Original Image | N/A | N/A | ![original](augmentation_eg/original.png)|
+| FlipAug | 50% | Flips the image and returns angle * -1 | ![flip](augmentation_eg/flip.png)|
+| RoadsignAug | 100% | Draws a grey straight line outside of the road | ![roadsign](augmentation_eg/roadsign.png)|
+| ShadowAug | 100% | Draws a 50% transparent black polygon of a random shape (3-8 vertices) | ![shadow](augmentation_eg/shadow.png)|
+| DottedLineAug | 100% | Draws a white dotted line on a random location of the image | ![dottedline](augmentation_eg/dottedline.png)|
+| StretchAug | 100% | Enlarges or reduces the image by stretching up to +-40%. Fills the empty region black | ![stretch](augmentation_eg/stretch.png)|
+| Brightness | 100% | Make the image up to 75% brighter or darker | ![brightness](augmentation_eg/brightness.png)|
+
+### Architecture of the model
+![Final_Network](attempt5_network.png)
+
+### Resulting video
+[![Watch the video](video/attempt5_track1.mp4)](video/attempt5_track1.mp4)
+[![Watch the video](video/attempt5_track2.mp4)](video/attempt5_track2.mp4)

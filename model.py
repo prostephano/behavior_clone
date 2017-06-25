@@ -120,11 +120,11 @@ def train_network(train_set, validation_set, image_shape, batch_size):
 
     model.add(keras.layers.core.Dense(30, kernel_initializer=train_get_initializer(), \
             kernel_regularizer=train_get_regularizer()))
-    model.add(keras.layers.Activation('linear'))
+    model.add(keras.layers.Activation('relu'))
 
     model.add(keras.layers.core.Dense(10, kernel_initializer=train_get_initializer(), \
             kernel_regularizer=train_get_regularizer()))
-    model.add(keras.layers.Activation('linear'))
+    model.add(keras.layers.Activation('relu'))
 
     model.add(keras.layers.core.Dense(1))
     model.add(keras.layers.Activation('linear'))

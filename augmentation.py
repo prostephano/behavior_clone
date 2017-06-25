@@ -44,14 +44,26 @@ class BrightnessAug(AugBase):
         return img, angle
 
 class StretchAug(AugBase):
-    def __init__(self, stretch_ratio):
-        self.stretch_ratio = stretch_ratio
+    def __init__(self, max_stretch_ratio):
+        self.max_stretch_ratio = max_stretch_ratio
 
     def perform_aug(self, img, angle):
         org_shape = img.shape
-        img = cv2.resize(img,None,fx=1, fy=self.stretch_ratio, interpolation = cv2.INTER_CUBIC)
-        # Crop
-        img = img[img.shape[0] - org_shape[0]:img.shape[0], 0:img.shape[1]]
+        stretch_ratio = 1.0 + random.uniform(-self.max_stretch_ratio, self.max_stretch_ratio)
+        if (stretch_ratio > 1.0) :
+            # Enlarge
+            img = cv2.resize(img,None,fx=1, fy=stretch_ratio, interpolation = cv2.INTER_CUBIC)
+            # Crop
+            img = img[img.shape[0] - org_shape[0]:img.shape[0], 0:img.shape[1]]
+        elif (stretch_ratio < 1.0):
+            # Reduce
+            stretched = cv2.resize(img,None,fx=1, fy=stretch_ratio, interpolation = cv2.INTER_CUBIC)
+            img = numpy.zeros_like(img)
+            x_start = org_shape[1] - stretched.shape[1]
+            y_start = org_shape[0] - stretched.shape[0]
+            # Replace
+            img[y_start:img.shape[0], x_start:img.shape[1]] = stretched
+        assert(img.shape == org_shape)
         return img, angle
 
 class ShadowAug(AugBase):
@@ -109,7 +121,24 @@ class DottedLineAug(AugBase):
         img = cv2.addWeighted(org_img, 0.1, img, 0.9, 0.0)
         return img, angle
 
-AUG_COLLECTION = [(0.5, FlipAug()), (1.0, ShadowAug()), (1.0, BrightnessAug(0.75)), (0.5, StretchAug(1.3)), (1.0, DottedLineAug())]
+class RoadSignAug(AugBase):
+    def perform_aug(self, img, angle):
+        thickness = 5
+        color = (200, 200, 200)
+        length = 30
+
+        max_x = img.shape[1]
+        max_y = img.shape[0]
+        x = random.randint(0, max_x - 1)
+        y = random.randint(length, int(max_y * 0.5))
+        line_pt_s = (x, y - length)
+        line_pt_e = (x, y)
+
+        img = numpy.array(img, dtype=numpy.uint8)
+        cv2.line(img,line_pt_s,line_pt_e,color,thickness)
+        return img, angle
+
+AUG_COLLECTION = [(0.5, FlipAug()), (1.0, RoadSignAug()), (1.0, ShadowAug()), (1.0, BrightnessAug(0.75)), (1.0, StretchAug(0.4)), (1.0, DottedLineAug())]
 
 def behavior_perform_aug(img, angle):
     for aug_tuple in AUG_COLLECTION:
