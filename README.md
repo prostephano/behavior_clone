@@ -49,7 +49,7 @@ With my machine capacity, it was a challange to train such a complicated model, 
 
 NVIDIA model is for a self driving car. In contrast, my model needs to only predict a steering angle. Realizing this, I changed the model to something smaller: LeNet
 
-## Final Model Architecture
+## Model Architecture
 
 Here is a visualization of the architecture
 
@@ -79,11 +79,11 @@ The following augmentation was applied during training
 ## Result
 The resulting model performed well on the first track. The following is a video of how the model navigates through the course. A short manual intervention was done (around 3:22) to make the car go the opposite direction
 
-[![Watch the video](video/attempt1_track1.mp4)](video/attempt1_track1.mp4)
+[![Attemtp 1: Track 1](video/attempt1_track1.mp4)](video/attempt1_track1.mp4)
 
 Unfortunately, the model couldnt drive through the second track. It was rather willing to jump off the cliff.
 
-[![Watch the video](video/attempt1_track2.mp4)](video/attempt1_track2.mp4)
+[![Attempt1 : Track 2](video/attempt1_track2.mp4)](video/attempt1_track2.mp4)
 
 What went well:
 * Developed a model which can be trained within an hour on a desktop GPU
@@ -94,10 +94,10 @@ What didnt go well:
 * Model does not (yet) know how to recover. It is not shown on the video, but when situated perpendicular to the lane, the model drove over the lane
 
 # Attempt #2: Improving and Generalization
-## Failure Analysis #1: Lack of data on the second track
+## Failure Analysis: Lack of data on the second track
 The initial analysis of the failure on the second track was the lack of training data. As such, driving data from the second data was added to the training data. Surprisingly, this did not improve the model at all. Rather, it worsened the performance on the first track as well, driving the car out of lane
 
-[![Watch the video](video/attempt2_blindly_more_data.mp4)](video/attempt2_blindly_more_data.mp4)
+[![Attempt 2: Result of blindly adding data](video/attempt2_blindly_more_data.mp4)](video/attempt2_blindly_more_data.mp4)
 
 ## Failure Analysis #2: Unbalanced data
 It was noticed at this point that the data is unbalanced. The histogram below shows the distribution of angles of training data
@@ -107,37 +107,38 @@ It was noticed at this point that the data is unbalanced. The histogram below sh
 The histogram shows the below:
 
 * The model might have a right turn bias. Most of data is > 0. Indeed, the model did not go left enough when it ran out of the lane in failure analysis #1. Realizing this, the model was ran through the same section, but in a different direction. That went better!
-[![Watch the video](video/attempt2_blindly_more_data_opposite.mp4)](video/attempt2_blindly_more_data_opposite.mp4)
+[![Attempt 2: Opposite direction](video/attempt2_blindly_more_data_opposite.mp4)](video/attempt2_blindly_more_data_opposite.mp4)
 * Most of data is near 0. This explains why the model is not taking sharp turns when it should
 
-Based on the above analysis, the training data was balanced based on angles. Between dropping data and adding more data of minorities, the latter was chosen. The amount of data between minority and majority was wide enough that dropping to fit the minority would have resulted in lack of training data. The logic for balancing is in balance.py. As the model has randomized augmentation logic, training data in minority sets were added without any augmentation.
+Based on the above analysis, the training data was balanced based on angles. Between dropping data and adding more data of minorities, the latter was chosen. The amount of data between minority and majority was wide enough that dropping to fit the minority would have resulted in lack of training data. The logic for balancing is in balance.py. As the model has randomized augmentation logic, training data in minority sets were added as is.
 
 Result: That went better! And the model is able to drive through the first course. Still fails on the second track, however
 
-## Failure Analysis #3: Shadow
+# Attempt #3: Optimizing Augmentation
 
-Running the model through the second track, the model drove to a wrong side, whenever shadow is present. This looked related to BlackoutAug, which was forcing the car to drive with half of the screen black.
+## Failure Analysis: Shadow
+Running the model through the second track, the model drove to a wrong side, whenever a shadow is present. This looked related to BlackoutAug, which was forcing the car to drive with the half of the screen black.
 
 Realizing this, it became clear that the augmentation strategy has to be restablished. The second track contained some unique features which could confuse the model.
 
 * Shadow: Due to varying brightness, the line could appear darker or brigher. BrightnessAug was to counter this, making the image darker or brighter
 * Dotted Line: The second track has dotted line, which is the model assumed not OK to cross. DottedlineAug was added, drawing a dotted white line to random locations of the screen. The assumption was that, this would help the model to learn to ignore the white dotted line
 
-Also, another dense layer was as there was a gap in the training loss and the validation loss.
+Also, another dense layer was as there was a persistent gap in the training loss and the validation loss.
 
-### Optimization: Training time
+## Optimization: Training time
 At this point, the model was getting trained with 77000s of images per epoch, each epoch taking nearly 4 hours.
 
 This is when I convered all linear activations to the relu activations, except the last layer. Relu shows the same behavior as a linear activation above threshold, but outputs 0 below the threshold. This property can help with the training time by making the network sparse, reducing the amount of computations.
 
 The conversion reduced the training time to 3 hours.
 
-### Resulting model
+## Resulting model
 Here is how the resulting model drove. It was doing better, until it ran into a sharp curve.
 
-[![Watch the video](video/attempt3_track2.mp4)](video/attempt3_track2.mp4)
+[![Attempt 3: Track 2](video/attempt3_track2.mp4)](video/attempt3_track2.mp4)
 
-## Failure Analysis #4: Sharp turn
+# Attempt #4: Corner Case
 
 The resulting model was doing better, but it was consistently failing to make a sharp turn. It appeared that the model is not sure what to do if it is too close to the lane marking. This is more apparent when the model predicts a left turn close to the curve.
 
@@ -145,10 +146,11 @@ The resulting model was doing better, but it was consistently failing to make a 
 
 To train the model how to get through a sharp turn, StretchAug was modified to not only enlarge the image, but also to reduce the image. The reduced image makes a regular curve appear more sharp
 
-![prestretch](augmentation_eg/regular_curve_prestretch.jpg)
-![poststretch](augmentation_eg/regular_curve_poststretch.png)
+| Pre-stretch | Post-stretch |
+| ------------- |:-------------:|
+| ![prestretch](augmentation_eg/regular_curve_prestretch.jpg) | ![poststretch](augmentation_eg/regular_curve_poststretch.png) |
 
-## Final
+# Final
 Training with the enhanced StretchAug, the model finally became capable of driving both tracks!
 
 The below recaps the model and augmentations
@@ -161,7 +163,7 @@ The table below lists augmentations done, and an example of applying each indivi
 
 | Augmentation Name | Probability | Behavior | EG |
 | ------------- |:-------------:| -----:| -----:|
-| Original Image | N/A | N/A | ![original](augmentation_eg/original.png)|
+| Original Image | N/A | N/A | ![original](augmentation_eg/original.jpg)|
 | FlipAug | 50% | Flips the image and returns angle * -1 | ![flip](augmentation_eg/flip.png)|
 | RoadsignAug | 100% | Draws a grey straight line outside of the road | ![roadsign](augmentation_eg/roadsign.png)|
 | ShadowAug | 100% | Draws a 50% transparent black polygon of a random shape (3-8 vertices) | ![shadow](augmentation_eg/shadow.png)|
@@ -169,9 +171,10 @@ The table below lists augmentations done, and an example of applying each indivi
 | StretchAug | 100% | Enlarges or reduces the image by stretching up to +-40%. Fills the empty region black | ![stretch](augmentation_eg/stretch.png)|
 | Brightness | 100% | Make the image up to 75% brighter or darker | ![brightness](augmentation_eg/brightness.png)|
 
-### Architecture of the model
+### Final Model Architecture
 ![Final_Network](attempt5_network.png)
 
 ### Resulting video
-[![Watch the video](video/attempt5_track1.mp4)](video/attempt5_track1.mp4)
-[![Watch the video](video/attempt5_track2.mp4)](video/attempt5_track2.mp4)
+[![Track 1](video/attempt5_track1.mp4)](video/attempt5_track1.mp4)
+
+[![Track 2](video/attempt5_track2.mp4)](video/attempt5_track2.mp4)
