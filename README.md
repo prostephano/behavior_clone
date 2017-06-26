@@ -140,7 +140,7 @@ Here is how the resulting model drove. It was doing better, until it ran into a 
 
 # Attempt #4: Corner Case
 
-The resulting model was doing better, but it was consistently failing to make a sharp turn. It appeared that the model is not sure what to do if it is too close to the lane marking. This is more apparent when the model predicts a left turn close to the curve.
+The resulting model was doing better, but it was consistently failing to make a sharp turn. It appeared that the model is not sure what to do if it is too close to the lane marking. This is more apparent when the model predicts an opposite direction from where it should go.
 
 ![sharp](attempt4_track2_stuck.png)
 
