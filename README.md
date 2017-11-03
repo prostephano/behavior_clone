@@ -126,12 +126,14 @@ Realizing this, it became clear that the augmentation strategy has to be restabl
 
 Also, another dense layer was as there was a persistent gap in the training loss and the validation loss.
 
-## Optimization: Training time
+## Transition to Relu
 At this point, the model was getting trained with 77000s of images per epoch, each epoch taking nearly 4 hours.
 
-This is when I convered all linear activations to the relu activations, except the last layer. Relu shows the same behavior as a linear activation above threshold, but outputs 0 below the threshold. This property can help with the training time by making the network sparse, reducing the amount of computations.
+This is when I convered all linear activations to the relu activations, except the last layer. The last layer was kept as linear, as most of the time some angle would be needed.
 
-The conversion reduced the training time to 3 hours.
+Relu shows the same behavior as a linear activation above threshold, but outputs 0 below the threshold. 
+
+The conversion also reduced the training time to 3 hours, which I have yet to understand.
 
 ## Resulting model
 Here is how the resulting model drove. It was doing better, until it ran into a sharp curve.
